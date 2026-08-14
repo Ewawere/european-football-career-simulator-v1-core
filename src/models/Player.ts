@@ -1,3 +1,5 @@
+import { Personality, createDefaultPersonality } from './Personality';
+
 export type Position = 'GK' | 'CB' | 'LB' | 'RB' | 'CDM' | 'CM' | 'CAM' | 'LW' | 'RW' | 'ST';
 
 export interface Attributes {
@@ -33,6 +35,12 @@ export interface PlayerAppearance {
   eyeColor: string;
 }
 
+export interface ScoutInterest {
+  clubId: string;
+  clubName: string;
+  interestPercent: number; // 0 to 100
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -45,13 +53,16 @@ export interface Player {
   attributes: Attributes;
   appearance: PlayerAppearance;
   clubId: string | null;
+  clubName?: string;
   reputation: number; // 0 to 100
   marketValue: number; // in Euros
+  personality: Personality;
+  managerTrust: number; // 0 to 100
+  scoutInterests: ScoutInterest[];
 }
 
 export class PlayerGenerator {
   static generateAppearance(seed: string): PlayerAppearance {
-    // Simple pseudo-random logic based on string hash
     const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
     return {
@@ -65,15 +76,14 @@ export class PlayerGenerator {
     };
   }
 
-  static createNewPlayer(name: string, position: Position, nationality: string): Player {
+  static createNewPlayer(name: string, position: Position, nationality: string, clubName: string = 'Arsenal'): Player {
     const seed = Math.random().toString(36).substring(7);
     const appearance = this.generateAppearance(seed);
     
-    // Default starting attributes for a 16-year-old academy player
     const baseAttr = 40 + Math.floor(Math.random() * 20);
     
     return {
-      id: crypto.randomUUID(),
+      id: `plr-${Math.random().toString(36).substring(2, 9)}`,
       name,
       age: 16,
       nationality,
@@ -82,9 +92,15 @@ export class PlayerGenerator {
       overall: baseAttr,
       potential: baseAttr + 20 + Math.floor(Math.random() * 20),
       appearance,
-      clubId: null,
-      reputation: 1,
-      marketValue: 50000,
+      clubId: 'ars',
+      clubName,
+      reputation: 15,
+      marketValue: 500000,
+      personality: createDefaultPersonality(),
+      managerTrust: 50,
+      scoutInterests: [
+        { clubId: 'dor', clubName: 'Borussia Dortmund', interestPercent: 40 }
+      ],
       attributes: {
         finishing: baseAttr,
         passing: baseAttr,
