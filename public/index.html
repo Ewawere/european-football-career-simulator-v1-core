@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>European Football Career Simulator</title>
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 70px; }
+    header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px; text-align: center; }
+    header h1 { font-size: 1.25rem; color: var(--primary); font-weight: 700; }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 16px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .card h2 { font-size: 1rem; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .player-name { font-size: 1.5rem; font-weight: bold; }
+    .ovr-badge { background: var(--primary); color: #fff; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+
+    .stat-row { margin-bottom: 10px; }
+    .stat-label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-muted); }
+    .progress-bar { background: var(--border); border-radius: 6px; height: 10px; overflow: hidden; }
+    .progress-fill { background: var(--primary); height: 100%; transition: width 0.3s ease; }
+    .progress-fill.accent { background: var(--accent); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn { background: var(--primary); color: #fff; border: none; padding: 12px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; font-size: 1rem; transition: background 0.2s; margin-top: 8px; }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: #475569; }
+
+    /* Nav bar */
+    nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+    nav button { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    nav button.active { color: var(--primary); }
+    nav button svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .news-item, .social-item { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; }
+    .news-item:last-child, .social-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .news-source { font-size: 0.8rem; color: var(--accent); margin-bottom: 2px; }
+    .news-headline { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; }
+    .news-summary { font-size: 0.85rem; color: var(--text-muted); }
+
+    .attr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9rem; }
+    .attr-item { display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; }
+
+    #match-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 200; padding: 16px; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⚽ European Football Career Simulator</h1>
+  </header>
+
+  <div class="container">
+    
+    <!-- CAREER HUB TAB -->
+    <div id="tab-hub" class="tab-content active">
+      <div class="card">
+        <div class="player-header">
+          <div>
+            <div id="hub-name" class="player-name">Alex Hunter</div>
+            <div id="hub-club-pos" style="color: var(--text-muted); font-size: 0.9rem;">Arsenal • RW • 18 yrs</div>
+          </div>
+          <div id="hub-ovr" class="ovr-badge">72</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-label"><span>Condition</span><span id="hub-cond-val">85%</span></div>
+          <div class="progress-bar"><div id="hub-cond-bar" class="progress-fill" style="width: 85%;"></div></div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-label"><span>Manager Trust</span><span id="hub-trust-val">91%</span></div>
+          <div class="progress-bar"><div id="hub-trust-bar" class="progress-fill accent" style="width: 91%;"></div></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 0.9rem; color: var(--text-muted);">
+          <span>Market Value: <strong id="hub-val" style="color: var(--text);">€14.5M</strong></span>
+          <span>Date: <strong id="hub-date" style="color: var(--text);">2025-08-10</strong></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Next Match</h2>
+        <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 4px;" id="hub-fixture">Arsenal vs Chelsea</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Premier League • Matchday <span id="hub-matchday">1</span></div>
+        <button class="btn" onclick="playMatch()">⚽ Play Match</button>
+      </div>
+
+      <div class="grid-2">
+        <button class="btn btn-secondary" onclick="restPlayer()">🛌 Rest</button>
+        <button class="btn btn-secondary" onclick="saveGame()">💾 Save Game</button>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="tab-profile" class="tab-content">
+      <div class="card">
+        <h2>Player Attributes</h2>
+        <div id="profile-attrs" class="attr-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="card">
+        <h2>Personality</h2>
+        <div id="profile-personality" style="font-size: 1.1rem; font-weight: bold; color: var(--accent);">Confident Superstar</div>
+      </div>
+    </div>
+
+    <!-- TRAINING TAB -->
+    <div id="tab-training" class="tab-content">
+      <div class="card">
+        <h2>Weekly Training Focus</h2>
+        <button class="btn" onclick="doTraining('Finishing')">🎯 Shooting & Finishing</button>
+        <button class="btn" onclick="doTraining('Dribbling')">⚡ Dribbling & Agility</button>
+        <button class="btn" onclick="doTraining('Passing')">🎨 Passing & Vision</button>
+        <button class="btn" onclick="doTraining('Physical')">💪 Strength & Stamina</button>
+      </div>
+    </div>
+
+    <!-- CALENDAR TAB -->
+    <div id="tab-calendar" class="tab-content">
+      <div class="card">
+        <h2>Schedule & Fixtures</h2>
+        <div id="calendar-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- NEWS TAB -->
+    <div id="tab-news" class="tab-content">
+      <div class="card">
+        <h2>Latest News</h2>
+        <div id="news-list">
+          <p style="color: var(--text-muted);">No news yet. Play a match to generate media reports!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOCIAL TAB -->
+    <div id="tab-social" class="tab-content">
+      <div class="card">
+        <h2>Social Media Feed</h2>
+        <div id="social-list">
+          <p style="color: var(--text-muted);">No social posts yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSFERS TAB -->
+    <div id="tab-transfers" class="tab-content">
+      <div class="card">
+        <h2>Scout Interest & Offers</h2>
+        <div id="transfers-list">
+          <p style="color: var(--text-muted);">No active transfer offers.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEGACY TAB -->
+    <div id="tab-legacy" class="tab-content">
+      <div class="card">
+        <h2>Career Milestones</h2>
+        <div id="legacy-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav>
+    <button onclick="switchTab('hub', this)" class="active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Hub
+    </button>
+    <button onclick="switchTab('profile', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Profile
+    </button>
+    <button onclick="switchTab('training', this)">
+      <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 4.86 4.86 6.29 6.29 4.86 7.71 6.29 9.14 2 13.43 3.43 14.86 7 11.29 15.57 20.57zm-6.43 6.43l1.43-1.43 1.43 1.43 2.14-2.14-1.43-1.43 1.43-1.43-1.43-1.43-2.14 2.14-1.43-1.43-1.43 1.43z"/></svg>
+      Train
+    </button>
+    <button onclick="switchTab('calendar', this)">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+      Calendar
+    </button>
+    <button onclick="switchTab('news', this)">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-2h11v2zm3-4H4v-2h14v2zm0-4H4V8h14v2z"/></svg>
+      News
+    </button>
+    <button onclick="switchTab('social', this)">
+      <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+      Social
+    </button>
+    <button onclick="switchTab('transfers', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.03-.42 1.98-1.07 2.75z"/></svg>
+      Transfers
+    </button>
+    <button onclick="switchTab('legacy', this)">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      Legacy
+    </button>
+  </nav>
+
+  <!-- MATCH MODAL -->
+  <div id="match-modal">
+    <div class="modal-box">
+      <h2 style="color: var(--primary); margin-bottom: 12px;">Match Completed!</h2>
+      <div id="match-result-text" style="font-size: 1.1rem; margin-bottom: 16px;">Arsenal 2 - 1 Chelsea</div>
+      <div id="match-rating-text" style="color: var(--accent); margin-bottom: 20px;">Your Rating: ⭐ 9.2</div>
+      <button class="btn" onclick="closeMatchModal()">Continue</button>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      btn.classList.add('active');
+      if (tabId === 'news') loadNews();
+      if (tabId === 'social') loadSocial();
+      if (tabId === 'transfers') loadTransfers();
+      if (tabId === 'legacy') loadLegacy();
+      if (tabId === 'calendar') loadCalendar();
+      if (tabId === 'profile') loadProfile();
+    }
+
+    async function loadCareer() {
+      const res = await fetch('/api/career');
+      const data = await res.json();
+      document.getElementById('hub-name').innerText = data.player.name;
+      document.getElementById('hub-club-pos').innerText = `${data.club ? data.club.name : 'Free Agent'} • ${data.player.position} • ${data.player.age} yrs`;
+      document.getElementById('hub-ovr').innerText = data.player.overall;
+      document.getElementById('hub-val').innerText = '€' + (data.player.marketValue / 1000000).toFixed(1) + 'M';
+      document.getElementById('hub-date').innerText = data.calendar.currentDate;
+      document.getElementById('hub-matchday').innerText = data.calendar.matchday;
+      document.getElementById('hub-cond-val').innerText = data.player.condition + '%';
+      document.getElementById('hub-cond-bar').style.width = data.player.condition + '%';
+      document.getElementById('hub-trust-val').innerText = data.player.managerTrust + '%';
+      document.getElementById('hub-trust-bar').style.width = data.player.managerTrust + '%';
+      document.getElementById('hub-fixture').innerText = `${data.club ? data.club.name : 'Arsenal'} vs Chelsea`;
+    }
+
+    async function loadProfile() {
+      const res = await fetch('/api/player');
+      const data = await res.json();
+      const attrs = data.player.attributes;
+      const grid = document.getElementById('profile-attrs');
+      grid.innerHTML = '';
+      for (const [k, v] of Object.entries(attrs)) {
+        grid.innerHTML += `<div class="attr-item"><span>${k.toUpperCase()}</span><strong>${v}</strong></div>`;
+      }
+      document.getElementById('profile-personality').innerText = data.archetype;
+    }
+
+    async function playMatch() {
+      const res = await fetch('/api/match/play', { method: 'POST' });
+      const data = await res.json();
+      const mr = data.matchResult;
+      document.getElementById('match-result-text').innerText = `Full Time: Arsenal ${mr.homeScore} - ${mr.awayScore} Chelsea`;
+      document.getElementById('match-rating-text').innerText = `Your Match Rating: ⭐ ${mr.playerRating.toFixed(1)} / 10.0`;
+      document.getElementById('match-modal').style.display = 'flex';
+      loadCareer();
+    }
+
+    function closeMatchModal() {
+      document.getElementById('match-modal').style.display = 'none';
+    }
+
+    async function doTraining(focus) {
+      const res = await fetch('/api/training', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ focus })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadCareer();
+    }
+
+    async function restPlayer() {
+      const res = await fetch('/api/rest', { method: 'POST' });
+      const data = await res.json();
+      alert(data.message);
+      loadCareer();
+    }
+
+    async function saveGame() {
+      const res = await fetch('/api/save', { method: 'POST' });
+      const data = await res.json();
+      alert(data.message);
+    }
+
+    async function loadNews() {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      const list = document.getElementById('news-list');
+      if (data.news.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted);">No news articles yet.</p>';
+        return;
+      }
+      list.innerHTML = '';
+      data.news.forEach(n => {
+        list.innerHTML += `<div class="news-item"><div class="news-source">${n.source}</div><div class="news-headline">${n.headline}</div><div class="news-summary">${n.summary}</div></div>`;
+      });
+    }
+
+    async function loadSocial() {
+      const res = await fetch('/api/social');
+      const data = await res.json();
+      const list = document.getElementById('social-list');
+      if (data.social.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted);">No social posts yet.</p>';
+        return;
+      }
+      list.innerHTML = '';
+      data.social.forEach(s => {
+        list.innerHTML += `<div class="news-item"><div class="news-source">${s.actorHandle} (${s.actorName})</div><div class="news-headline">"${s.content}"</div><div class="news-summary">❤️ ${s.likes} likes • ${s.hashtags.join(' ')}</div></div>`;
+      });
+    }
+
+    async function loadTransfers() {
+      const res = await fetch('/api/transfers');
+      const data = await res.json();
+      const list = document.getElementById('transfers-list');
+      list.innerHTML = `<p>Market Value: <strong>€${(data.marketValue / 1000000).toFixed(1)}M</strong></p><br>`;
+      if (data.scoutInterests && data.scoutInterests.length > 0) {
+        list.innerHTML += '<h3>Scout Interest</h3>';
+        data.scoutInterests.forEach(s => {
+          list.innerHTML += `<p>${s.clubName}: <strong>${s.interestPercent}%</strong></p>`;
+        });
+      }
+    }
+
+    async function loadLegacy() {
+      const res = await fetch('/api/legacy');
+      const data = await res.json();
+      const list = document.getElementById('legacy-list');
+      list.innerHTML = '';
+      data.milestones.forEach(m => {
+        list.innerHTML += `<div class="news-item"><div class="news-source">${m.date}</div><div class="news-headline">${m.title}</div><div class="news-summary">${m.description}</div></div>`;
+      });
+    }
+
+    async function loadCalendar() {
+      const res = await fetch('/api/calendar');
+      const data = await res.json();
+      const list = document.getElementById('calendar-list');
+      list.innerHTML = '';
+      data.fixtures.forEach(f => {
+        list.innerHTML += `<div class="news-item"><div class="news-source">${f.date} (${f.competition})</div><div class="news-headline">${f.home} vs ${f.away}</div><div class="news-summary">Matchday #${f.matchday}</div></div>`;
+      });
+    }
+
+    // Initial load
+    loadCareer();
+  </script>
+</body>
+</html>
